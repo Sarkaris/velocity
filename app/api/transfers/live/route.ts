@@ -18,10 +18,6 @@ type LiveMessage =
     };
 
 export async function GET(req: NextRequest) {
-  if (req.headers.get('upgrade') !== 'websocket') {
-    return new NextResponse('Expected WebSocket', { status: 400 });
-  }
-
   const { searchParams } = new URL(req.url);
   const transferCode = searchParams.get('code') ?? '';
 

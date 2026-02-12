@@ -29,9 +29,11 @@ export async function GET(req: NextRequest) {
     return new NextResponse('Invalid transfer code', { status: 400 });
   }
 
-  // WebSocketPair is available in the Edge runtime
-  const pair = new WebSocketPair();
-  const [client, server] = Object.values(pair) as [WebSocket, WebSocket];
+  // WebSocketPair is available in the Edge runtime, but not in TypeScript's DOM lib
+  const { 0: client, 1: server } = (new (globalThis as any).WebSocketPair()) as {
+    0: WebSocket;
+    1: WebSocket;
+  };
 
   const redis = getRedis();
   const transferKey = redisKeys.transfer(transferCode);
@@ -99,9 +101,8 @@ export async function GET(req: NextRequest) {
     }, intervalMs);
   }
 
-  // Accept the server side of the WebSocket and start streaming
-  // @ts-expect-error - accept is available at runtime
-  server.accept();
+  // Accept the server side of the WebSocket and start streaming (Edge runtime)
+  server.accept?.();
   startStreaming().catch(() => {
     try {
       server.close();

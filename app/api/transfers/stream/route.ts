@@ -88,11 +88,14 @@ export async function GET(req: NextRequest) {
     return new NextResponse('Invalid role', { status: 400 });
   }
 
-  // WebSocketPair is available in the Edge runtime
-  const pair = new WebSocketPair();
-  const [client, server] = Object.values(pair) as [WebSocket, WebSocket];
+  // WebSocketPair is available in the Edge runtime, but not in TypeScript's DOM lib
+  const { 0: client, 1: server } = (new (globalThis as any).WebSocketPair()) as {
+    0: WebSocket;
+    1: WebSocket;
+  };
 
-  server.accept();
+  // Edge runtime WebSocket has accept(); optional chaining keeps TS happy
+  server.accept?.();
 
   async function start() {
     const session = await validateSession(transferCode);

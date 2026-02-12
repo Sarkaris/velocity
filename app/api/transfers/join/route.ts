@@ -10,7 +10,6 @@ function getClientIp(req: NextRequest): string {
   }
   const realIp = req.headers.get('x-real-ip');
   if (realIp) return realIp;
-  // @ts-expect-error - not part of NextRequest type, but may exist at runtime
   return (req as any).ip ?? '';
 }
 

@@ -1,11 +1,22 @@
 ## Velocity Transfer
 
-Velocity Transfer is a one‑page file sharing app built on Next.js.  
-It lets a sender generate a short numeric key, share it with a receiver, and move a file with:
+A focused, production‑ready file handoff experience built on Next.js.
 
-- **Storage‑backed transfers** (default): sender uploads directly to object storage (Cloudflare R2) using a presigned URL, receivers download from storage.
-- **Live presence**: sender and receivers see how many people are currently joined on a transfer via a WebSocket channel.
-- **Ephemeral sessions**: transfer sessions are short‑lived, keyed by a 6–8 digit code, and cleaned up automatically.
+![Velocity Transfer hero](public/hero.png)
+
+Velocity lets you move a file from one browser to another using a short numeric code.  
+No accounts, no inbox clutter, and files are scoped to a single, short‑lived transfer.
+
+---
+
+### Highlights
+
+- **One‑time numeric keys**: 6–8 digit codes that are safe to share over chat or call.
+- **Direct‑to‑storage uploads**: the browser uploads straight to Cloudflare R2 via presigned URLs.
+- **Ephemeral sessions**: transfers are short‑lived and cleaned up automatically.
+- **Live receiver count**: both sides see how many people have joined a transfer.
+
+> Note: experimental WebSocket live streaming is wired up in the backend but **currently hidden in the UI** while it’s being iterated on.
 
 ---
 
@@ -21,60 +32,40 @@ It lets a sender generate a short numeric key, share it with a receiver, and mov
 
 ---
 
-### Core concepts
+### How it works
 
-- **Transfer code**: a 6–8 digit numeric key. All actions (start, join, upload, complete, download) are scoped to a transfer code.
-- **Transfer session (Redis)**:
-  - Stores `sessionId`, `transferCode`, `status` (`started | completed | failed`), `createdAt`, `expiresAt`, `fileSize`, `mimeType`, `storageKey`.
-- **Transfer record (Postgres)**:
-  - Table `transfers` tracks `transfer_code`, `file_size`, `status`, `receiver_count`, `created_at`, `completed_at`, `duration`.
-  - Table `files` links `transfer_id` to a `storage_key` and file metadata.
+#### Sender flow (recommended path)
 
----
-
-### Features & flows
-
-#### Sender: storage‑backed transfer (recommended)
-
-1. **Choose file** in the “Send a file” panel.
-2. Click **“Generate key & send”**.
+1. Open the **Sender** panel and pick a file.
+2. Click **Generate key & send**.
 3. The app:
    - Calls `POST /api/transfers/start` → creates a Redis session + Postgres transfer row.
    - Calls `POST /api/transfers/upload-url` → generates a presigned R2 upload URL.
    - Uploads the file **directly to R2** via `PUT` (no bytes go through the Next API).
    - Calls `POST /api/transfers/complete` → marks the transfer as completed and stores receiver count & file metadata.
-4. A green card shows the **numeric key**. Share this key with receivers.
+4. A highlighted card shows the **numeric key** to share with receivers.
 
-#### Receiver: download a file
+#### Receiver flow
 
-1. In “Receive a file”, enter the key and click **“Join transfer”**.
+1. In the **Receiver** panel, paste the numeric key and click **Join transfer**.
 2. The app:
-   - Calls `POST /api/transfers/join` → validates the key and registers a receiver in Redis.
+   - Calls `POST /api/transfers/join` → validates the key and registers the receiver in Redis.
    - Opens `/api/transfers/live?code=...` (Edge WebSocket) to receive **live receiver count** updates.
-3. When the sender has finished uploading:
-   - Click **“Download file”**.
+3. When the sender finishes:
+   - Click **Download file**.
    - The app calls `POST /api/transfers/download-url` to fetch a presigned R2 download URL.
    - The browser navigates directly to that R2 URL to download the file.
 
-#### Live presence
+---
 
-- Endpoint: `GET /api/transfers/live?code=<transferCode>` (WebSocket, Edge runtime).
-- Periodically reads the receiver set for that transfer from Redis and broadcasts:
-  - `{ type: 'receiver_count', transferCode, receiverCount }`
-- Both sender and receivers show a **live “receivers joined” count** for the active transfer.
+### Data model (high level)
 
-#### Experimental live streaming
-
-There is an experimental WebSocket endpoint:
-
-- `GET /api/transfers/stream?code=<transferCode>&role=sender|receiver`
-
-It is intended to stream file chunks in real time from sender to receivers (SendAnywhere‑style), but:
-
-- It depends on stable Edge WebSocket support in your deployment environment.
-- In some local `next dev` setups (especially on Windows), binary WebSocket support via `WebSocketPair` can be unreliable, causing “Live streaming connection error” / “Live receive connection error”.
-
-For production use today, rely on the **storage‑backed flow** described above.
+- **Transfer code**: 6–8 digit numeric key. All actions (start, join, upload, complete, download) are keyed by this value.
+- **Transfer session (Redis)**:
+  - Stores `sessionId`, `transferCode`, `status` (`started | completed | failed`), `createdAt`, `expiresAt`, `fileSize`, `mimeType`, `storageKey`.
+- **Transfer record (Postgres)**:
+  - `transfers` tracks `transfer_code`, `file_size`, `status`, `receiver_count`, `created_at`, `completed_at`, `duration`.
+  - `files` links `transfer_id` to a `storage_key` and file metadata.
 
 ---
 
@@ -131,14 +122,20 @@ npm start
 
 ---
 
-### UX & constraints
+### UX & behaviour
 
 - While a send is in progress:
   - The file chooser and send buttons are disabled to prevent conflicting actions.
-  - Upload progress is shown as a percentage.
+  - Upload progress is surfaced as a percentage and progress bar.
 - On the receiver:
-  - The “Download file” button is disabled until a transfer is in a valid state.
+  - The **Download file** button is disabled until the transfer is in a valid state.
   - API errors are surfaced as short, clear messages.
 - Sessions are ephemeral:
   - Transfer codes expire based on `transferConfig.sessionTtlSeconds`.
-  - Late receivers may see “transfer not found or expired” once the session has been cleaned up.
+  - Late receivers may see “transfer not found or expired” once the session is cleaned up.
+
+If you want to adapt Velocity for your own product, you can:
+
+- Swap R2 for any S3‑compatible object storage.
+- Replace Redis with your own session/cache layer.
+- Customize the UI copy and theming without touching the transfer protocol.

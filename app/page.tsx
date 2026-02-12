@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 
 type StartResponse = {
@@ -562,192 +563,256 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-50">
-      <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-10 px-4 py-12 md:flex-row md:items-start md:gap-16">
-        <section className="flex-1 space-y-6">
-          <header className="space-y-2">
-            <h1 className="text-3xl font-semibold tracking-tight">
-              Velocity Transfer
-            </h1>
-            <p className="text-sm text-zinc-400">
-              Send a file using a one-time numeric key. No accounts. No
-              history.
+    <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-950 to-black text-zinc-50">
+      <div className="mx-auto flex min-h-screen max-w-6xl flex-col px-4 py-10 md:px-8 lg:px-10">
+        {/* Hero */}
+        <header className="grid gap-10 pb-10 md:grid-cols-[minmax(0,3fr),minmax(0,2fr)] md:items-center">
+          <div className="space-y-6">
+            <p className="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-500/5 px-3 py-1 text-xs font-medium text-emerald-300">
+              Fast, ephemeral file handoff
             </p>
-          </header>
-
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-lg">
-            <h2 className="mb-4 text-lg font-medium">Send a file</h2>
-
             <div className="space-y-4">
-              <label className="block text-sm font-medium text-zinc-300">
-                Choose file
-                <input
-                  type="file"
-                  disabled={isSending}
-                  className="mt-2 block w-full text-sm text-zinc-300 disabled:cursor-not-allowed disabled:opacity-60 file:mr-4 file:rounded-md file:border-0 file:bg-zinc-700 file:px-4 file:py-2 file:text-sm file:font-medium file:text-zinc-50 hover:file:bg-zinc-600"
-                  onChange={(e) => {
-                    const selected = e.target.files?.[0] ?? null;
-                    setFile(selected);
-                    setSendError(null);
-                  }}
-                />
-              </label>
-
-              {file && (
-                <p className="text-xs text-zinc-400">
-                  {file.name} ({Math.round(file.size / 1024)} KB)
-                </p>
-              )}
-
-              {uploadPercent !== null && (
-                <p className="text-xs text-zinc-400">
-                  Uploading: {uploadPercent}%
-                </p>
-              )}
-
-              <p className="text-xs text-zinc-500">
-                Use <span className="font-semibold">Generate key &amp; send</span> for
-                a stored transfer, or <span className="font-semibold">Send live (beta)</span>{' '}
-                to stream directly to a receiver that is currently online.
+              <h1 className="text-balance text-4xl font-semibold tracking-tight sm:text-5xl lg:text-6xl">
+                Share files in seconds,
+                <span className="block text-emerald-400">with just a code.</span>
+              </h1>
+              <p className="max-w-xl text-sm leading-relaxed text-zinc-400 sm:text-base">
+                Velocity creates a short numeric key that you can send over chat or call.
+                Your file uploads directly to storage, and the receiver downloads it
+                without accounts, history, or friction.
               </p>
-
-              <button
-                type="button"
-                disabled={!canSend}
-                onClick={handleSend}
-                className="inline-flex items-center rounded-md bg-emerald-500 px-4 py-2 text-sm font-medium text-emerald-950 shadow-sm transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
-              >
-                {isSending ? 'Sending…' : 'Generate key & send'}
-              </button>
-
-              <button
-                type="button"
-                disabled={!canSend}
-                onClick={handleSendLive}
-                className="inline-flex items-center rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-emerald-50 shadow-sm transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
-              >
-                {isSending
-                  ? 'Sending live…'
-                  : liveTransferCode
-                    ? 'Start live stream'
-                    : 'Generate live key'}
-              </button>
-
-              {sendError && (
-                <p className="text-xs text-red-400">{sendError}</p>
-              )}
-
-              {transferCode && (
-                <div className="mt-4 rounded-md border border-emerald-600/40 bg-emerald-950/40 p-4 text-sm">
-                  <p className="font-medium text-emerald-300">
-                    Share this key with the receiver:
-                  </p>
-                  <p className="mt-1 text-2xl font-semibold tracking-[0.35em] text-emerald-100">
-                    {transferCode.split('').join(' ')}
-                  </p>
-                  <p className="mt-3 text-xs text-emerald-200/80">
-                    Live receivers joined:{' '}
-                    {liveReceiverCount !== null
-                      ? liveReceiverCount
-                      : senderReceiverCount}
-                  </p>
-                  {liveTransferCode && (
-                    <p className="mt-1 text-[11px] text-emerald-200/80">
-                      Ask the receiver to join with this key, then click{' '}
-                      <span className="font-semibold">Start live stream</span>.
-                    </p>
-                  )}
-                </div>
-              )}
+            </div>
+            <div className="flex flex-wrap gap-3 text-xs text-zinc-400">
+              <span className="inline-flex items-center gap-1 rounded-full border border-zinc-800 bg-zinc-900/60 px-3 py-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+                No signup, no inbox clutter
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full border border-zinc-800 bg-zinc-900/60 px-3 py-1">
+                End‑to‑end: browser → storage
+              </span>
             </div>
           </div>
-        </section>
+          {/* <div className="relative hidden h-64 overflow-hidden rounded-3xl border border-zinc-800/80 bg-zinc-900/60 shadow-2xl shadow-emerald-500/10 md:block">
+            <Image
+              src="/hero.png"
+              alt="Velocity Transfer UI illustration"
+              fill
+              priority
+              className="object-cover object-center opacity-90"
+            />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/40" />
+          </div> */}
+        </header>
 
-        <section className="flex-1 space-y-6">
-          <div className="rounded-2xl border border-zinc-800 bg-zinc-900/60 p-6 shadow-lg">
-            <h2 className="mb-4 text-lg font-medium">Receive a file</h2>
-
-            <div className="space-y-3">
-              <label className="block text-sm font-medium text-zinc-300">
-                Enter transfer key
-                <input
-                  type="text"
-                  inputMode="numeric"
-                  pattern="\d*"
-                  maxLength={8}
-                  value={joinCodeInput}
-                  onChange={(e) => {
-                    setJoinCodeInput(e.target.value);
-                    setJoinError(null);
-                  }}
-                  className="mt-2 w-full rounded-md border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-50 outline-none ring-emerald-500/40 placeholder:text-zinc-500 focus:border-emerald-500 focus:ring-2"
-                  placeholder="e.g. 123456"
-                />
-              </label>
-
-              <button
-                type="button"
-                onClick={handleJoin}
-                className="inline-flex items-center rounded-md bg-zinc-100 px-4 py-2 text-sm font-medium text-zinc-950 shadow-sm transition hover:bg-white"
-              >
-                Join transfer
-              </button>
-
-              {joinError && (
-                <p className="text-xs text-red-400">{joinError}</p>
-              )}
-
-              {joinState && (
-                <div className="mt-4 space-y-2 rounded-md border border-zinc-700/80 bg-zinc-900 p-4 text-xs text-zinc-300">
-                  <p>
-                    Joined transfer <span className="font-mono">{joinState.transferCode}</span>.
+        {/* Main panels */}
+        <main className="grid flex-1 gap-8 md:grid-cols-2">
+          {/* Send panel */}
+          <section className="space-y-5">
+            <div className="rounded-2xl border border-zinc-800/80 bg-zinc-900/80 p-6 shadow-xl shadow-black/40 backdrop-blur">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-400">
+                    Sender
+                  </h2>
+                  <p className="mt-1 text-base font-medium text-zinc-50">
+                    Upload a file &amp; generate a key
                   </p>
-                  <p>Receiver ID: {joinState.receiverId}</p>
                 </div>
-              )}
+              </div>
 
-              {joinState && (
+              <div className="mt-6 space-y-4">
+                <label className="block text-xs font-medium text-zinc-300">
+                  File to send
+                  <input
+                    type="file"
+                    disabled={isSending}
+                    className="mt-2 block w-full cursor-pointer rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-xs text-zinc-200 outline-none ring-emerald-500/40 file:mr-4 file:cursor-pointer file:rounded-md file:border-0 file:bg-emerald-600 file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-emerald-950 hover:file:bg-emerald-500 focus:border-emerald-500 focus:ring-2 disabled:cursor-not-allowed disabled:opacity-60"
+                    onChange={(e) => {
+                      const selected = e.target.files?.[0] ?? null;
+                      setFile(selected);
+                      setSendError(null);
+                    }}
+                  />
+                </label>
+
+                {file && (
+                  <p className="text-xs text-zinc-400">
+                    {file.name}{' '}
+                    <span className="text-zinc-500">
+                      ({Math.round(file.size / 1024)} KB)
+                    </span>
+                  </p>
+                )}
+
+                {uploadPercent !== null && (
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-[11px] text-zinc-400">
+                      <span>Uploading</span>
+                      <span>{uploadPercent}%</span>
+                    </div>
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-zinc-800">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-emerald-500 transition-all"
+                        style={{ width: `${uploadPercent}%` }}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <p className="text-[11px] leading-relaxed text-zinc-500">
+                  Velocity uploads directly from your browser to secure object storage.
+                  Files are temporary and scoped to a single numeric key.
+                </p>
+
                 <button
                   type="button"
-                  onClick={handleDownload}
-                  disabled={isDownloading || (isReceivingLive && !liveFile)}
-                  className="mt-3 inline-flex items-center rounded-md bg-emerald-500 px-4 py-2 text-sm font-medium text-emerald-950 shadow-sm transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
+                  disabled={!canSend}
+                  onClick={handleSend}
+                  className="inline-flex w-full items-center justify-center rounded-md bg-emerald-500 px-4 py-2.5 text-sm font-medium text-emerald-950 shadow-sm shadow-emerald-500/30 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
                 >
-                  {isReceivingLive && !liveFile
-                    ? 'Waiting for live stream…'
-                    : isDownloading
-                      ? 'Preparing download…'
-                      : 'Download file'}
+                  {isSending ? 'Sending…' : 'Generate key & send'}
                 </button>
-              )}
 
-              {downloadError && (
-                <p className="text-xs text-red-400">{downloadError}</p>
-              )}
+                {/* Live streaming controls are kept in code but hidden for now */}
+                {/*
+                <button
+                  type="button"
+                  disabled={!canSend}
+                  onClick={handleSendLive}
+                  className="inline-flex w-full items-center justify-center rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-emerald-50 shadow-sm transition hover:bg-emerald-600 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
+                >
+                  {isSending
+                    ? 'Sending live…'
+                    : liveTransferCode
+                      ? 'Start live stream'
+                      : 'Generate live key'}
+                </button>
+                */}
 
-              {liveReceiverCount !== null && (
-                <p className="mt-2 text-xs text-zinc-400">
-                  Live receivers on this transfer: {liveReceiverCount}
-                </p>
-              )}
+                {sendError && (
+                  <p className="text-xs text-red-400">{sendError}</p>
+                )}
 
-              {isReceivingLive && (
-                <p className="mt-1 text-xs text-zinc-400">
-                  Receiving live stream
-                  {liveReceivePercent !== null
-                    ? `: ${liveReceivePercent}%`
-                    : '…'}
-                </p>
-              )}
+                {transferCode && (
+                  <div className="mt-4 space-y-3 rounded-xl border border-emerald-600/40 bg-emerald-950/40 p-4 text-xs">
+                    <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-emerald-300">
+                      Share this key
+                    </p>
+                    <p className="text-2xl font-semibold tracking-[0.35em] text-emerald-100">
+                      {transferCode.split('').join(' ')}
+                    </p>
+                    <p className="text-[11px] text-emerald-200/80">
+                      Receivers joined:{' '}
+                      {liveReceiverCount !== null
+                        ? liveReceiverCount
+                        : senderReceiverCount}
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          </section>
 
-          <p className="text-xs text-zinc-500">
-            Files are temporary and tied to a single transfer key. No accounts,
-            minimal logs, and sessions expire automatically.
-          </p>
-        </section>
-      </main>
+          {/* Receive panel */}
+          <section className="space-y-5">
+            <div className="rounded-2xl border border-zinc-800/80 bg-zinc-900/80 p-6 shadow-xl shadow-black/40 backdrop-blur">
+              <div className="flex items-center justify-between gap-2">
+                <div>
+                  <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-400">
+                    Receiver
+                  </h2>
+                  <p className="mt-1 text-base font-medium text-zinc-50">
+                    Enter the code &amp; download
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-6 space-y-4">
+                <label className="block text-xs font-medium text-zinc-300">
+                  Transfer key
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="\d*"
+                    maxLength={8}
+                    value={joinCodeInput}
+                    onChange={(e) => {
+                      setJoinCodeInput(e.target.value);
+                      setJoinError(null);
+                    }}
+                    className="mt-2 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-sm text-zinc-50 outline-none ring-emerald-500/40 placeholder:text-zinc-500 focus:border-emerald-500 focus:ring-2"
+                    placeholder="e.g. 123456"
+                  />
+                </label>
+
+                <button
+                  type="button"
+                  onClick={handleJoin}
+                  className="inline-flex w-full items-center justify-center rounded-md bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-950 shadow-sm transition hover:bg-white"
+                >
+                  Join transfer
+                </button>
+
+                {joinError && (
+                  <p className="text-xs text-red-400">{joinError}</p>
+                )}
+
+                {joinState && (
+                  <div className="mt-3 space-y-2 rounded-xl border border-zinc-700/80 bg-zinc-900 p-4 text-xs text-zinc-300">
+                    <p>
+                      Joined transfer{' '}
+                      <span className="font-mono">
+                        {joinState.transferCode}
+                      </span>
+                      .
+                    </p>
+                    <p className="text-zinc-400">Receiver ID: {joinState.receiverId}</p>
+                  </div>
+                )}
+
+                {joinState && (
+                  <button
+                    type="button"
+                    onClick={handleDownload}
+                    disabled={isDownloading || (isReceivingLive && !liveFile)}
+                    className="mt-3 inline-flex w-full items-center justify-center rounded-md bg-emerald-500 px-4 py-2.5 text-sm font-medium text-emerald-950 shadow-sm shadow-emerald-500/30 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
+                  >
+                    {isReceivingLive && !liveFile
+                      ? 'Waiting for live stream…'
+                      : isDownloading
+                        ? 'Preparing download…'
+                        : 'Download file'}
+                  </button>
+                )}
+
+                {downloadError && (
+                  <p className="text-xs text-red-400">{downloadError}</p>
+                )}
+
+                {liveReceiverCount !== null && (
+                  <p className="mt-1 text-[11px] text-zinc-500">
+                    Live receivers on this transfer: {liveReceiverCount}
+                  </p>
+                )}
+
+                {isReceivingLive && (
+                  <p className="mt-1 text-[11px] text-zinc-400">
+                    Receiving live stream
+                    {liveReceivePercent !== null
+                      ? `: ${liveReceivePercent}%`
+                      : '…'}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <p className="text-[11px] leading-relaxed text-zinc-500">
+              Files are temporary and tied to a single transfer key. No accounts, minimal
+              logs, and sessions expire automatically based on server configuration.
+            </p>
+          </section>
+        </main>
+      </div>
     </div>
   );
 }

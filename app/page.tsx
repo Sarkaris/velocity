@@ -26,6 +26,12 @@ type CompleteResponse = {
   receiverCount: number;
 };
 
+type TransferStatusResponse = {
+  transferCode: string;
+  status: 'started' | 'completed' | 'failed';
+  isReadyForDownload: boolean;
+};
+
 type LiveMessage =
   | {
       type: 'receiver_count';
@@ -74,6 +80,8 @@ export default function Home() {
   );
   const [isDownloading, setIsDownloading] = useState(false);
   const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [isTransferReady, setIsTransferReady] = useState(false);
+  const [isCheckingReady, setIsCheckingReady] = useState(false);
 
   const [ws, setWs] = useState<WebSocket | null>(null);
   const [streamWs, setStreamWs] = useState<WebSocket | null>(null);
@@ -436,6 +444,7 @@ export default function Home() {
         } else if (parsed.type === 'end') {
           setIsReceivingLive(false);
           setLiveReceivePercent(100);
+          setIsTransferReady(true);
 
           const blob = new Blob(chunks, {
             type: mimeType || 'application/octet-stream',
@@ -499,6 +508,8 @@ export default function Home() {
       const data = (await res.json()) as JoinResponse;
       setJoinState(data);
       setLiveReceiverCount(data.receiverCount);
+      setIsTransferReady(false);
+      setDownloadError(null);
       openLiveSocket(code);
       openStreamSocket(code, data.receiverId);
     } catch (err: any) {
@@ -548,6 +559,11 @@ export default function Home() {
           );
         }
 
+        if (res.status === 409) {
+          setIsTransferReady(false);
+          throw new Error('Waiting for sender to finish upload.');
+        }
+
         throw new Error(body.error || 'Failed to get download URL');
       }
 
@@ -561,6 +577,43 @@ export default function Home() {
       setIsDownloading(false);
     }
   }
+
+  useEffect(() => {
+    if (!joinState || liveFile) return;
+
+    let cancelled = false;
+    const code = joinState.transferCode;
+
+    const checkReady = async () => {
+      if (cancelled) return;
+      setIsCheckingReady(true);
+      try {
+        const res = await fetch(
+          `/api/transfers/status?code=${encodeURIComponent(code)}`,
+          { cache: 'no-store' }
+        );
+        if (!res.ok) return;
+        const data = (await res.json()) as TransferStatusResponse;
+        if (!cancelled) {
+          setIsTransferReady(data.isReadyForDownload);
+        }
+      } catch {
+        // best-effort polling
+      } finally {
+        if (!cancelled) {
+          setIsCheckingReady(false);
+        }
+      }
+    };
+
+    checkReady();
+    const interval = setInterval(checkReady, 3000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [joinState, liveFile]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-950 via-zinc-950 to-black text-zinc-50">
@@ -774,15 +827,28 @@ export default function Home() {
                   <button
                     type="button"
                     onClick={handleDownload}
-                    disabled={isDownloading || (isReceivingLive && !liveFile)}
+                    disabled={
+                      isDownloading ||
+                      (isReceivingLive && !liveFile) ||
+                      (!liveFile && !isTransferReady)
+                    }
                     className="mt-3 inline-flex w-full items-center justify-center rounded-md bg-emerald-500 px-4 py-2.5 text-sm font-medium text-emerald-950 shadow-sm shadow-emerald-500/30 transition hover:bg-emerald-400 disabled:cursor-not-allowed disabled:bg-zinc-700 disabled:text-zinc-400"
                   >
                     {isReceivingLive && !liveFile
                       ? 'Waiting for live stream…'
+                      : !liveFile && !isTransferReady
+                        ? 'Waiting for sender upload…'
                       : isDownloading
                         ? 'Preparing download…'
                         : 'Download file'}
                   </button>
+                )}
+
+                {joinState && !liveFile && !isTransferReady && (
+                  <p className="text-[11px] text-amber-300/90">
+                    Waiting for sender to finish upload. Download unlocks automatically.
+                    {isCheckingReady ? ' Checking status…' : ''}
+                  </p>
                 )}
 
                 {downloadError && (

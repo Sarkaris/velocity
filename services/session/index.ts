@@ -1,6 +1,5 @@
 import crypto from 'crypto';
-import type { Redis } from '@upstash/redis';
-import { getRedis } from '@/lib/redis/client';
+import { getRedis, type RedisLike } from '@/lib/redis/client';
 import { transferConfig, redisKeys } from '@/config/appConfig';
 import type {
   TransferSessionRedis,
@@ -10,7 +9,7 @@ import type {
 } from '@/types/transfer';
 import { AppError } from '@/services/shared/errors';
 
-function redis(): Redis {
+function redis(): RedisLike {
   return getRedis();
 }
 
